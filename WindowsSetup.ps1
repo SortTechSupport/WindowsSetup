@@ -8,7 +8,7 @@ Start-Transcript -Append $PSScriptRoot\Logs\WindowsSetupLog.txt
 
 # Load XML content from file
 # Specify the path to the XML file
-$xmlFilePath = "$PSScriptRoot\UserBasedLicencingConfiguration.xml"
+$xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
 
 # Create an XmlDocument and load XML content from the file
 $xml = New-Object System.Xml.XmlDocument
