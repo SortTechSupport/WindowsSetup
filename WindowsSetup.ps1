@@ -7,38 +7,9 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Start-Transcript -Append $PSScriptRoot\Logs\WindowsSetupLog.txt
 
 # Load XML content from file
-# Specify the path to the XML file
 $xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
-
-# Create an XmlDocument and load XML content from the file
 $xml = New-Object System.Xml.XmlDocument
 $xml.Load($xmlFilePath)
-
-# Create Freshdesk ticket function
-function New-FreshdeskTicket {
-    param (
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNull()]
-        [PSObject]$Transcript
-    )
-
-    # Configure the Freshdesk API endpoint and credentials
-    $apiEndpoint = "https://sortgroup.freshdesk.com/api/v2/tickets"
-    $apiKey = $xml.SelectSingleNode('//Freshdesk/FreshdeskAPIKey').InnerText
-    $headers = @{
-        "Content-Type" = "application/json"
-        "Authorization" = "Basic $( [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($apiKey):X")) )"
-    }
-
-    # Create the ticket and catch any errors
-    try {
-        $response = Invoke-RestMethod -Method Post -Uri $apiEndpoint -Headers $headers -Body $ticketData -ErrorAction Stop
-        Write-Verbose "Freshdesk ticket created with ID $($response.id)"
-    }
-    catch {
-        Write-Verbose "Error creating Freshdesk ticket: $_"
-    }
-}
 
 ## Housekeeping ##
 
@@ -84,8 +55,8 @@ Enable-WindowsOptionalFeature -Online -FeatureName NetFx3 -All
 
 # Disable LLMNR
 Write-Host -ForegroundColor Green "Disabling LLMNR"
-REG ADD  “HKLM\Software\policies\Microsoft\Windows NT\DNSClient”
-REG ADD  “HKLM\Software\policies\Microsoft\Windows NT\DNSClient” /v ” EnableMulticast” /t REG_DWORD /d “0” /f
+New-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT" -Name DNSClient -Force
+New-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name EnableMultiCast -Value 0 -PropertyType DWORD -Force
 
 # Disable NBT-NS
 Write-Host -ForegroundColor Green "Disabling NBT-NS"
@@ -121,11 +92,10 @@ $shortcut.IconLocation = "C:\Program Files (x86)\Microsoft\Edge\Application\msed
 $Shortcut.Save()
 
 ## Software Removal ##
-
 # Get unnecessary apps
 $unnecessaryApps = $xml.SelectNodes('//apps/unnecessary/app') | ForEach-Object { $_.id }
-# Get sponsored apps with added asterisk (*)
-$sponsoredApps = $xml.SelectNodes('//apps/sponsored/app') | ForEach-Object { "*$($_.id)*" }
+# Get sponsored apps
+$sponsoredApps = $xml.SelectNodes('//apps/sponsored/app') | ForEach-Object { $_.id }
 # Combine both arrays
 $allApps = $unnecessaryApps + $sponsoredApps
 
@@ -157,19 +127,5 @@ Write-Host -ForegroundColor Green "Installing Teams"
 
 ## Close debugging log Transcript ##
 Stop-Transcript
-
-## Create the freshdesk ticket ##
-$DeviceName = hostname
-$ticketData = @{
-    subject = "Windows setup of $DeviceName script results - $(Get-Date -Format 'dd\/MM\/yyyy HH\:mm\:ss')"
-    description = "$Transcript"
-    email = "Conrad.Kent@sortgroup.co.uk"
-    status = 2
-    priority = 1
-    group_id = 48000281822
-    type =	$type
-} | ConvertTo-Json -Depth 3
-New-FreshdeskTicket -Result $ticketData -Verbose
-
 Write-Host -ForegroundColor Green "Windows Setup complete."
 Start-Sleep -s 5
