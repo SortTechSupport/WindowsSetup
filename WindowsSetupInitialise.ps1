@@ -1,8 +1,18 @@
+# Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
+    Exit
+}
+
 # Specify the root and log paths for Windows Setup
 $rootPath = "C:\Windows-Setup\"
 New-Item -ItemType Directory -Path $rootPath -Force
 New-Item -ItemType Directory -Path $rootPath\Logs -Force
 Set-Location -Path $rootPath
+
+#Install Snipe Module for asset management
+Install-Module SnipeitPS -Force
+Update-Module SnipeitPS -Force
 
 # Pull setup script from Github and run it 
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/WindowsSetup.ps1 -OutFile ".\WindowsSetup.ps1"
