@@ -6,8 +6,14 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 # Create a log file for debugging
 Start-Transcript -Append $PSScriptRoot\Logs\WindowsSetupLog.txt
 
+# Module for asset management
+Import-Module SnipeitPS
+
 # Load XML content from file
+# Specify the path to the XML file
 $xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
+
+# Create an XmlDocument and load XML content from the file
 $xml = New-Object System.Xml.XmlDocument
 $xml.Load($xmlFilePath)
 
@@ -58,7 +64,7 @@ Write-Host -ForegroundColor Green "Disabling LLMNR"
 New-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT" -Name DNSClient -Force
 New-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -Name EnableMultiCast -Value 0 -PropertyType DWORD -Force
 
-# Disable NBT-NS
+# Disable NBT-NS 
 Write-Host -ForegroundColor Green "Disabling NBT-NS"
 $regkey = "HKLM:SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces"
 Get-ChildItem $regkey | ForEach-Object {Set-ItemProperty -Path "$regkey\$($_.pschildname)" -Name NetbiosOptions -Value 2 -Verbose}
@@ -124,6 +130,26 @@ Write-Host -ForegroundColor Green "Installing Practice Evolve"
 
 Write-Host -ForegroundColor Green "Installing Teams"
 .\TeamsBootStrapper.exe -p
+
+# Add asset to Snipe 
+$url = $xml.SelectSingleNode('//Snipe/SnipeURL').InnerText
+$apiKey = $xml.SelectSingleNode('//Snipe/SnipeAPIKey').InnerText
+Connect-SnipeitPS -url $url -apiKey $apiKey
+
+$computerName = $env:COMPUTERNAME
+$assetTag = (Get-WmiObject win32_bios).SerialNumber
+
+$assetExists = Get-SnipeITAsset -search $assetTag
+if(([string]::IsNullOrEmpty($assetExists)))
+{
+    $modelno = (Get-WmiObject -class Win32_ComputerSystem).Model
+    $modelSelection = Get-SnipeitModel | Where-Object {$_.model_number -like "*$modelno*"}
+    New-SnipeitAsset -Name $computerName -tag $assetTag -Model_id $modelSelection.id -Status "2"
+}
+else {
+    Write-Output "$computerName - $assetTag already exists"
+    exit
+}
 
 ## Close debugging log Transcript ##
 Stop-Transcript
