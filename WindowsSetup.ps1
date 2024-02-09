@@ -10,7 +10,6 @@ Start-Transcript -Append $PSScriptRoot\Logs\WindowsSetupLog.txt
 Import-Module SnipeitPS
 
 # Load XML content from file
-# Specify the path to the XML file
 $xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
 
 # Create an XmlDocument and load XML content from the file
@@ -98,11 +97,9 @@ $shortcut.IconLocation = "C:\Program Files (x86)\Microsoft\Edge\Application\msed
 $Shortcut.Save()
 
 ## Software Removal ##
-# Get unnecessary apps
+# Get apps
 $unnecessaryApps = $xml.SelectNodes('//apps/unnecessary/app') | ForEach-Object { $_.id }
-# Get sponsored apps
 $sponsoredApps = $xml.SelectNodes('//apps/sponsored/app') | ForEach-Object { $_.id }
-# Combine both arrays
 $allApps = $unnecessaryApps + $sponsoredApps
 
 # Iterate through the apps
@@ -131,23 +128,23 @@ Write-Host -ForegroundColor Green "Installing Practice Evolve"
 Write-Host -ForegroundColor Green "Installing Teams"
 .\TeamsBootStrapper.exe -p
 
-# Add asset to Snipe 
+## Add asset to Snipe ## 
 $url = $xml.SelectSingleNode('//Snipe/SnipeURL').InnerText
 $apiKey = $xml.SelectSingleNode('//Snipe/SnipeAPIKey').InnerText
 Connect-SnipeitPS -url $url -apiKey $apiKey
 
 $computerName = $env:COMPUTERNAME
-$assetTag = (Get-WmiObject win32_bios).SerialNumber
+$serialNumber = (Get-WmiObject win32_bios).SerialNumber
 
-$assetExists = Get-SnipeITAsset -search $assetTag
+$assetExists = Get-SnipeITAsset -search $serialNumber
 if(([string]::IsNullOrEmpty($assetExists)))
 {
     $modelno = (Get-WmiObject -class Win32_ComputerSystem).Model
     $modelSelection = Get-SnipeitModel | Where-Object {$_.model_number -like "*$modelno*"}
-    New-SnipeitAsset -Name $computerName -tag $assetTag -Model_id $modelSelection.id -Status "2"
+    New-SnipeitAsset -Name $computerName -tag $computerName -serial $serialNumber -Model_id $modelSelection.id -rtd_location_id "1" -Status "2"
 }
 else {
-    Write-Output "$computerName - $assetTag already exists"
+    Write-Output "$computerName - $serialNumber already exists"
     exit
 }
 
