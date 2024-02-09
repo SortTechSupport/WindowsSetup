@@ -114,10 +114,10 @@ foreach ($Bloat in $allApps) {
 
 ## Call next scripts ##
 Write-Host -ForegroundColor Green "Removing existing office install"
-& \\vfp02\SortGroup\Scripts\OfficeSetup\OfficeInstall\ExecuteSaraCmd.ps1
+& .\ExecuteSaraCmd.ps1
 
 Write-Host -ForegroundColor Green "Installing SortGroup Microsoft Office Suite"
-& \\vfp02\SortGroup\Scripts\OfficeSetup\OfficeInstall\Install-Office365Suite.ps1
+& .\Install-Office365Suite.ps1
 
 Write-Host -ForegroundColor Green "Installing VSA"
 Start-Process msiexec.exe -Wait -ArgumentList '/I "\\vfp02\software$\_Local installers\VSASetup.msi" /quiet'
