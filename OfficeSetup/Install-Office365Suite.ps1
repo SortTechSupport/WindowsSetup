@@ -1,27 +1,11 @@
-# Downloads and installs the Office 365 suite for Windows using the Office Deployment Tool
-# To use - invoke this script and supply the path for the .xml file
-# eg. .\Install-Office365Suite.ps1 -ConfigurationXMLFile "\\Path\To\UserBasedLicencingConfiguration.xml"
+## Downloads and installs the Office 365 suite for Windows using the Office Deployment Tool
+## To use - invoke this script and supply the path for the .xml file
+## eg. .\Install-Office365Suite.ps1 -ConfigurationXMLFile "\\Path\To\UserBasedLicencingConfiguration.xml"
 
-Function Test-URL{
-  Param(
-    $CurrentURL
-  )
-
-  Try{
-    $HTTPRequest = [System.Net.WebRequest]::Create($CurrentURL)
-    $HTTPResponse = $HTTPRequest.GetResponse()
-    $HTTPStatus = [Int]$HTTPResponse.StatusCode
-
-    If($HTTPStatus -ne 200) {
-      Return $False
-    }
-
-      $HTTPResponse.Close()
-
-  }Catch{
-      Return $False
-  }    
-  Return $True
+# Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+  Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
+  Exit
 }
 
 function Get-ODTURL {
@@ -38,13 +22,7 @@ function Get-ODTURL {
 $VerbosePreference = "Continue"
 $ErrorActionPreference = "Stop"
 
-
-$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-If(!($CurrentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))){
-    Write-Warning "Script is not running as Administrator"
-    Write-Warning "Please rerun this script as Administrator."
-    Exit
-}
+# Define config XML and create install folder
 $ConfigurationXMLFile = "$PSScriptRoot\UserBasedLicencingConfiguration.xml"
 $OfficeInstallDownloadPath = "$PSScriptRoot\OfficeInstall"
 
@@ -52,10 +30,10 @@ If(-Not(Test-Path $OfficeInstallDownloadPath )){
   New-Item -Path $OfficeInstallDownloadPath  -ItemType Directory -ErrorAction Stop | Out-Null
 }
 
-#Get the ODT Download link
+# Get the ODT Download link
 $ODTInstallLink = Get-ODTURL
 
-#Download the Office Deployment Tool
+# Download the Office Deployment Tool
 Write-Verbose "Downloading the Office Deployment Tool..."
 Try{
   $ODTInstallLink
@@ -67,7 +45,7 @@ Try{
   Exit
 }
 
-#Run the Office Deployment Tool setup
+# Run the Office Deployment Tool setup
 Try{
   Write-Verbose "Running the Office Deployment Tool..."
   Start-Process "$OfficeInstallDownloadPath\ODTSetup.exe" -ArgumentList "/quiet /extract:$OfficeInstallDownloadPath" -Wait
@@ -76,7 +54,7 @@ Try{
   Write-Warning $_
 }
 
-#Run the O365 install
+# Run the O365 install
 Try{
   Write-Verbose "Downloading and installing Office 365"
   Start-Process "$OfficeInstallDownloadPath\Setup.exe" -ArgumentList "/configure $ConfigurationXMLFile" -Wait -PassThru
