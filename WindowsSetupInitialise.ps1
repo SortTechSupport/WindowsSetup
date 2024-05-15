@@ -18,10 +18,10 @@ Update-Module SnipeitPS
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/WindowsSetup.ps1 -OutFile ".\WindowsSetup.ps1"
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/OfficeSetup/ExecuteSaraCmd.ps1 -OutFile ".\ExecuteSaraCmd.ps1"
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/OfficeSetup/Install-Office365Suite.ps1 -OutFile ".\Install-Office365Suite.ps1"
-Invoke-WebRequest -Url https://files.wildix.com/integrations/win/collaboration/Collaboration-x64.msi -OutFile ".\Collaboration-x64.msi"
 Copy-Item "\\vfp02\software$\_Local installers\WindowsSetup\WindowsSetup.xml" -Destination $rootPath
 Copy-Item "\\vfp02\software$\_Local installers\WindowsSetup\UserBasedLicencingConfiguration.xml" -Destination $rootPath
 Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2243204&clcid=0x409" -OutFile ".\TeamsBootStrapper.exe"
+Invoke-WebRequest -Url https://files.wildix.com/integrations/win/collaboration/Collaboration-x64.msi -OutFile ".\Collaboration-x64.msi"
 
 # Run the Windows-Setup Script
 & .\WindowsSetup.ps1
