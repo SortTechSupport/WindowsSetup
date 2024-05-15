@@ -1,3 +1,4 @@
+#Requires -modules SnipeitPS
 # Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
@@ -54,6 +55,17 @@ powercfg.exe -change -hibernate-timeout-dc 0
 # Set British Time Zone
 Set-TimeZone -Id "GMT Standard Time"
 
+# Set home location to the United Kingdom
+Set-WinHomeLocation 0xf2
+
+# Override language list with just English GB
+$1 = New-WinUserLanguageList en-GB
+$1[0].Handwriting = 1
+Set-WinUserLanguageList $1 -force
+
+# Set system local
+Set-WinSystemLocale en-GB
+
 # Enable .NET Framework
 Write-Host -ForegroundColor Green "Enable .NET Framework"
 Enable-WindowsOptionalFeature -Online -FeatureName NetFx3 -All
@@ -107,12 +119,14 @@ foreach ($Bloat in $allApps) {
     Get-AppxPackage -Name $Bloat -ErrorAction SilentlyContinue | Remove-AppxPackage
     Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $Bloat -ErrorAction SilentlyContinue | Remove-AppxProvisionedPackage -Online
     Write-Host -ForegroundColor Green "Trying to remove $Bloat."
+    $ResultText.text = "`r`n" + "`r`n" + "Trying to remove $Bloat."
 }
     Write-Host  -ForegroundColor Green "Finished Removing Bloatware Apps"
+    $ResultText.text = "`r`n" +"`r`n" + "Finished Removing Bloatware Apps"
 
 ## Call next scripts ##
 Write-Host -ForegroundColor Green "Removing existing office install"
-& .\ExecuteSaraCmd.ps1
+& .\ExecuteSaraCmd.ps1 
 
 Write-Host -ForegroundColor Green "Installing SortGroup Microsoft Office Suite"
 & .\Install-Office365Suite.ps1
@@ -122,6 +136,9 @@ Start-Process msiexec.exe -Wait -ArgumentList '/I "\\vfp02\software$\_Local inst
 
 Write-Host -ForegroundColor Green "Installing Practice Evolve"
 & \\pesvr01\PracticeEvolveInstall\PEInstall.ps1
+
+Write-Host -ForegroundColor Green "Installing Wildix"
+.\Collaboration-x64.msi /qn host=sortlegal.wildixin.com secondaryHost=sortlimited.wildixin.com callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1 
 
 Write-Host -ForegroundColor Green "Installing Teams"
 .\TeamsBootStrapper.exe -p
@@ -149,4 +166,4 @@ else {
 ## Close debugging log Transcript ##
 Stop-Transcript
 Write-Host -ForegroundColor Green "Windows Setup complete."
-Start-Sleep -s 5
+pause
