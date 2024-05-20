@@ -119,10 +119,10 @@ foreach ($Bloat in $allApps) {
     Get-AppxPackage -Name $Bloat -ErrorAction SilentlyContinue | Remove-AppxPackage
     Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $Bloat -ErrorAction SilentlyContinue | Remove-AppxProvisionedPackage -Online
     Write-Host -ForegroundColor Green "Trying to remove $Bloat."
-    $ResultText.text = "`r`n" + "`r`n" + "Trying to remove $Bloat."
+    #$ResultText.text = "`r`n" + "`r`n" + "Trying to remove $Bloat."
 }
     Write-Host  -ForegroundColor Green "Finished Removing Bloatware Apps"
-    $ResultText.text = "`r`n" +"`r`n" + "Finished Removing Bloatware Apps"
+    #$ResultText.text = "`r`n" +"`r`n" + "Finished Removing Bloatware Apps"
 
 ## Call next scripts ##
 Write-Host -ForegroundColor Green "Removing existing office install"
