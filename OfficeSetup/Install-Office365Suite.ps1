@@ -10,7 +10,7 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 function Get-ODTURL {
 
-  [String]$MSWebPage = Invoke-RestMethod 'https://download.microsoft.com/download/2/7/A/27AF1BE6-DD20-4CB4-B154-EBAB8A7D4A7E/officedeploymenttool_17531-20046.exe' #'https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117'
+  [String]$MSWebPage = Invoke-RestMethod 'https://www.microsoft.com/en-us/download/confirmation.aspx?id=49117'
 
   $MSWebPage | ForEach-Object {
     if ($_ -match 'url=(https://.*officedeploymenttool.*\.exe)') {
