@@ -140,6 +140,12 @@ Write-Host -ForegroundColor Green "Installing Practice Evolve"
 Write-Host -ForegroundColor Green "Installing Wildix"
 .\Collaboration-x64.msi /qn host=sortlegal.wildixin.com secondaryHost=sortlimited.wildixin.com callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1 
 
+# Add Wildix to the public startup folder for all users
+$WshShell = New-Object -comObject WScript.Shell
+$Shortcut = $WshShell.CreateShortcut("C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\Wildix.lnk")
+$Shortcut.TargetPath = "C:\Program Files\Wildix Collaboration\Wildix Collaboration.exe"
+$Shortcut.Save()
+
 Write-Host -ForegroundColor Green "Installing Teams"
 .\TeamsBootStrapper.exe -p
 
