@@ -1,4 +1,26 @@
-#Requires -modules SnipeitPS
+<#.SYNOPSIS
+Automates Windows setup tasks including configuration adjustments, software installations, removal of unnecessary apps, and asset registration in Snipe.
+
+.DESCRIPTION
+This script automates various tasks for Windows setup. It first ensures administrative privileges, 
+then configures system settings such as boot menu, system protection, power options, and language settings. 
+It also installs and removes software applications specified in an XML configuration file. 
+Finally, it registers the computer as an asset in Snipe.
+
+.PARAMETER None
+This script does not accept any parameters.
+
+.EXAMPLE
+.\WindowsSetup.ps1
+Runs the script to automate Windows setup tasks.
+
+.NOTES
+Author: Conrad Kent
+Date: 28/10/2022
+Version: 1.0#>
+
+#Region - Initial Params
+#Requires -modules SnipeitPS, PSWindowsUpdates
 # Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
@@ -16,9 +38,9 @@ $xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
 # Create an XmlDocument and load XML content from the file
 $xml = New-Object System.Xml.XmlDocument
 $xml.Load($xmlFilePath)
+#EndRegion
 
-## Housekeeping ##
-
+#Region - Housekeeping
 # Set F8 to boot to Safe Mode
 Write-Host -ForegroundColor Green "Setting boot menu to legacy"
 bcdedit /set "{current}" bootmenupolicy legacy
@@ -89,17 +111,17 @@ $Parameters = @{
     Confirm = $false
 }
 Set-SmbServerConfiguration @Parameters
+#EndRegion
 
-## Software Installation ##
-
+#Region - Software Installation
 # Install Chocolatey and other basic programs
 Write-Host -ForegroundColor Green "Install Chocolatey to automate basic program installation"
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 	choco install chocolatey-core.extension -y
-    choco install googlechrome -y --ignore-checksums
-    choco install adobereader -y
-    choco install 7zip -y
-    choco install citrix-workspace -y
+        choco install googlechrome -y --ignore-checksums
+        choco install adobereader -y
+        choco install 7zip -y
+        choco install citrix-workspace -y
 
 # Create Citrix shortcut on Public Desktop
 $WshShell = New-Object -comObject WScript.Shell
@@ -107,8 +129,9 @@ $Shortcut = $WshShell.CreateShortcut("C:\Users\Public\Desktop\Citrix.lnk")
 $Shortcut.TargetPath = "https://sortgroup.cloud.com/"
 $shortcut.IconLocation = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 $Shortcut.Save()
+#EndRegion
 
-## Software Removal ##
+#Region - Software Removal
 # Get apps
 $unnecessaryApps = $xml.SelectNodes('//apps/unnecessary/app') | ForEach-Object { $_.id }
 $sponsoredApps = $xml.SelectNodes('//apps/sponsored/app') | ForEach-Object { $_.id }
@@ -123,8 +146,9 @@ foreach ($Bloat in $allApps) {
 }
     Write-Host  -ForegroundColor Green "Finished Removing Bloatware Apps"
     #$ResultText.text = "`r`n" +"`r`n" + "Finished Removing Bloatware Apps"
+#EndRegion
 
-## Call next scripts ##
+#Region - Call next scripts
 Write-Host -ForegroundColor Green "Removing existing office install"
 & .\ExecuteSaraCmd.ps1 
 
@@ -138,7 +162,9 @@ Write-Host -ForegroundColor Green "Installing Practice Evolve"
 & \\pesvr01\PracticeEvolveInstall\PEInstall.ps1
 
 Write-Host -ForegroundColor Green "Installing Wildix"
-.\Collaboration-x64.msi /qn host=sortlegal.wildixin.com secondaryHost=sortlimited.wildixin.com callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1 
+$SLURL = $xml.SelectSingleNode('//Wildix/SortLegalURL').InnerText
+$SLtdURL = $xml.SelectSingleNode('//Wildix/SortLimitedURL').InnerText
+.\Collaboration-x64.msi /qn host=$SLURL secondaryHost=$SLtdURL callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1
 
 # Add Wildix to the public startup folder for all users
 $WshShell = New-Object -comObject WScript.Shell
@@ -148,8 +174,9 @@ $Shortcut.Save()
 
 Write-Host -ForegroundColor Green "Installing Teams"
 .\TeamsBootStrapper.exe -p
+#EndRegion
 
-## Add asset to Snipe ## 
+#Region - Add asset to Snipe 
 $url = $xml.SelectSingleNode('//Snipe/SnipeURL').InnerText
 $apiKey = $xml.SelectSingleNode('//Snipe/SnipeAPIKey').InnerText
 Connect-SnipeitPS -url $url -apiKey $apiKey
@@ -168,8 +195,9 @@ else {
     Write-Output "$computerName - $serialNumber already exists"
     exit
 }
+#EndRegion
 
 ## Close debugging log Transcript ##
 Stop-Transcript
 Write-Host -ForegroundColor Green "Windows Setup complete."
-pause
+Start-Sleep -s 5
