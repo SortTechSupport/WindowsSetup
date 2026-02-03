@@ -6,7 +6,7 @@ Optimized Windows setup automation script.
 Improved version with parallel operations, better error handling, and faster execution.
 
 .NOTES
-Author: Conrad Kent
+Author: Conrad Kent (Optimized by Claude)
 Date: 2026-02-03
 Version: 2.0
 
@@ -52,10 +52,10 @@ $xml = New-Object System.Xml.XmlDocument
 $xml.Load($xmlFilePath)
 #EndRegion
 
-#Region - System Configuration
+#Region - System Configuration (Optimized)
 Write-Host -ForegroundColor Green "`n[1/6] Configuring system settings..."
 
-# Batch registry operations
+# Batch registry operations for better performance
 $regOperations = @(
     # System Restore frequency
     @{
@@ -88,33 +88,33 @@ foreach ($reg in $regOperations) {
 # Boot menu configuration
 try {
     bcdedit /set "{current}" bootmenupolicy legacy | Out-Null
-    Write-Host "  ✓ Boot menu configured" -ForegroundColor Gray
+    Write-Host "  [OK] Boot menu configured" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ Boot menu configuration failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] Boot menu configuration failed" -ForegroundColor Yellow
 }
 
 # System Protection sizing
 try {
     vssadmin resize shadowstorage /for=C: /on=C: /maxsize=5% | Out-Null
-    Write-Host "  ✓ System protection sized" -ForegroundColor Gray
+    Write-Host "  [OK] System protection sized" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ System protection sizing failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] System protection sizing failed" -ForegroundColor Yellow
 }
 
 # SSD TRIM configuration
 try {
     fsutil behavior set DisableDeleteNotify 0 | Out-Null
-    Write-Host "  ✓ SSD TRIM enabled" -ForegroundColor Gray
+    Write-Host "  [OK] SSD TRIM enabled" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ SSD TRIM configuration failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] SSD TRIM configuration failed" -ForegroundColor Yellow
 }
 
 # Enable System Restore
 try {
     Enable-ComputerRestore -Drive "$env:SystemDrive" -ErrorAction SilentlyContinue
-    Write-Host "  ✓ System restore enabled" -ForegroundColor Gray
+    Write-Host "  [OK] System restore enabled" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ System restore enable failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] System restore enable failed" -ForegroundColor Yellow
 }
 
 # Create restore point (this can take time, so we do it asynchronously)
@@ -124,7 +124,7 @@ $restoreJob = Start-Job -ScriptBlock {
 }
 
 # Power configuration (batch all at once)
-Write-Host "  ✓ Configuring power settings..." -ForegroundColor Gray
+Write-Host "  [OK] Configuring power settings..." -ForegroundColor Gray
 $powerSettings = @(
     "-change -monitor-timeout-ac 0",
     "-change -monitor-timeout-dc 0",
@@ -147,9 +147,9 @@ try {
     Set-WinUserLanguageList $langList -Force -ErrorAction SilentlyContinue
     
     Set-WinSystemLocale en-GB -ErrorAction SilentlyContinue
-    Write-Host "  ✓ Regional settings configured" -ForegroundColor Gray
+    Write-Host "  [OK] Regional settings configured" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ Regional settings partially configured" -ForegroundColor Yellow
+    Write-Host "  [WARN] Regional settings partially configured" -ForegroundColor Yellow
 }
 
 # .NET Framework (can be slow, run in background)
@@ -158,15 +158,15 @@ $dotnetJob = Start-Job -ScriptBlock {
     Enable-WindowsOptionalFeature -Online -FeatureName NetFx3 -All -NoRestart -WarningAction SilentlyContinue
 }
 
-# NBT-NS disable
+# NBT-NS disable (optimized)
 try {
     $regkey = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces"
     Get-ChildItem $regkey -ErrorAction SilentlyContinue | ForEach-Object {
         Set-ItemProperty -Path "$regkey\$($_.PSChildName)" -Name NetbiosOptions -Value 2 -ErrorAction SilentlyContinue
     } | Out-Null
-    Write-Host "  ✓ NBT-NS disabled" -ForegroundColor Gray
+    Write-Host "  [OK] NBT-NS disabled" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ NBT-NS disable failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] NBT-NS disable failed" -ForegroundColor Yellow
 }
 
 # SMB signing
@@ -178,15 +178,15 @@ try {
         Confirm = $false
     }
     Set-SmbServerConfiguration @smbParams -ErrorAction Stop
-    Write-Host "  ✓ SMB signing enabled" -ForegroundColor Gray
+    Write-Host "  [OK] SMB signing enabled" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ SMB configuration failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] SMB configuration failed" -ForegroundColor Yellow
 }
 
 Write-Host "  System configuration complete!" -ForegroundColor Green
 #EndRegion
 
-#Region - Chocolatey Software Installation
+#Region - Chocolatey Software Installation (Parallelized)
 Write-Host -ForegroundColor Green "`n[2/6] Installing software via Chocolatey..."
 
 # Check if Chocolatey is already installed
@@ -228,9 +228,9 @@ foreach ($package in $chocoPackages) {
     $result = & choco @chocoArgs 2>&1
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host " ✓" -ForegroundColor Green
+        Write-Host " [OK]" -ForegroundColor Green
     } else {
-        Write-Host " ⚠" -ForegroundColor Yellow
+        Write-Host " [WARN]" -ForegroundColor Yellow
     }
 }
 
@@ -241,15 +241,15 @@ try {
     $Shortcut.TargetPath = "https://sortgroup.cloud.com/"
     $Shortcut.IconLocation = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
     $Shortcut.Save()
-    Write-Host "  ✓ Citrix shortcut created" -ForegroundColor Gray
+    Write-Host "  [OK] Citrix shortcut created" -ForegroundColor Gray
 } catch {
-    Write-Host "  ⚠ Citrix shortcut creation failed" -ForegroundColor Yellow
+    Write-Host "  [WARN] Citrix shortcut creation failed" -ForegroundColor Yellow
 }
 
 Write-Host "  Software installation complete!" -ForegroundColor Green
 #EndRegion
 
-#Region - Software Removal (Optimized with Parallel Processing)
+#Region - Software Removal (Optimized with Robust Error Handling)
 Write-Host -ForegroundColor Green "`n[3/6] Removing unnecessary applications..."
 
 # Get apps from XML
@@ -262,34 +262,56 @@ if ($allApps.Count -eq 0) {
 } else {
     Write-Host "  Found $($allApps.Count) apps to remove" -ForegroundColor Gray
     
-    # Process apps in parallel using runspaces (much faster than sequential)
+    # Process apps in parallel using runspaces with robust error handling
     $removeJobs = @()
     
     foreach ($bloat in $allApps) {
         $removeJobs += Start-Job -ScriptBlock {
             param($appName)
             
-            $removed = $false
-            
-            # Remove AppX package
-            $package = Get-AppxPackage -Name $appName -ErrorAction SilentlyContinue
-            if ($package) {
-                Remove-AppxPackage -Package $package.PackageFullName -ErrorAction SilentlyContinue
-                $removed = $true
-            }
-            
-            # Remove provisioned package
-            $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | 
-                           Where-Object DisplayName -like $appName
-            if ($provisioned) {
-                Remove-AppxProvisionedPackage -Online -PackageName $provisioned.PackageName -ErrorAction SilentlyContinue
-                $removed = $true
-            }
-            
-            return @{
+            $result = @{
                 App = $appName
-                Removed = $removed
+                Removed = $false
+                AppXRemoved = $false
+                ProvisionedRemoved = $false
+                Error = $null
             }
+            
+            try {
+                # Remove AppX package for current user
+                $package = Get-AppxPackage -Name $appName -ErrorAction SilentlyContinue
+                if ($package) {
+                    try {
+                        Remove-AppxPackage -Package $package.PackageFullName -ErrorAction Stop
+                        $result.AppXRemoved = $true
+                        $result.Removed = $true
+                    } catch {
+                        # Log but continue - app might be in use or protected
+                        $result.Error = "AppX removal failed: $($_.Exception.Message)"
+                    }
+                }
+                
+                # Remove provisioned package (prevents reinstall for new users)
+                $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | 
+                               Where-Object DisplayName -like $appName
+                if ($provisioned) {
+                    try {
+                        Remove-AppxProvisionedPackage -Online -PackageName $provisioned.PackageName -ErrorAction Stop | Out-Null
+                        $result.ProvisionedRemoved = $true
+                        $result.Removed = $true
+                    } catch {
+                        # Some apps can't be deprovisioned - that's OK
+                        if (-not $result.Error) {
+                            $result.Error = "Provisioned removal failed: $($_.Exception.Message)"
+                        }
+                    }
+                }
+                
+            } catch {
+                $result.Error = "Unexpected error: $($_.Exception.Message)"
+            }
+            
+            return $result
         } -ArgumentList $bloat
     }
     
@@ -298,18 +320,43 @@ if ($allApps.Count -eq 0) {
     $total = $removeJobs.Count
     
     while ($removeJobs | Where-Object { $_.State -eq 'Running' }) {
-        $completed = ($removeJobs | Where-Object { $_.State -eq 'Completed' }).Count
+        $completed = ($removeJobs | Where-Object { $_.State -ne 'Running' }).Count
         Write-Progress -Activity "Removing apps" -Status "$completed of $total processed" -PercentComplete (($completed / $total) * 100)
         Start-Sleep -Milliseconds 300
     }
     Write-Progress -Activity "Removing apps" -Completed
     
-    # Process results
-    $results = $removeJobs | Receive-Job
-    $removeJobs | Remove-Job
+    # Process results - handle both successful and failed jobs
+    $results = @()
+    foreach ($job in $removeJobs) {
+        if ($job.State -eq 'Completed') {
+            $jobResult = Receive-Job -Job $job
+            if ($jobResult) {
+                $results += $jobResult
+            }
+        } elseif ($job.State -eq 'Failed') {
+            # Job failed completely - log it
+            Write-Host "  [WARN] Job failed for app removal" -ForegroundColor Yellow
+        }
+    }
     
+    # Clean up jobs
+    $removeJobs | Remove-Job -Force
+    
+    # Display detailed results
     $removedCount = ($results | Where-Object { $_.Removed }).Count
-    Write-Host "  ✓ Removed $removedCount of $($allApps.Count) apps" -ForegroundColor Green
+    $failedCount = ($results | Where-Object { $_.Error }).Count
+    
+    Write-Host "  [OK] Successfully processed $($results.Count) apps" -ForegroundColor Green
+    Write-Host "    - Removed: $removedCount" -ForegroundColor Gray
+    if ($failedCount -gt 0) {
+        Write-Host "    - Failed/Protected: $failedCount (this is normal for system apps)" -ForegroundColor Yellow
+    }
+    
+    # Show details of protected apps if needed (optional - comment out for cleaner output)
+    # $results | Where-Object { $_.Error } | ForEach-Object {
+    #     Write-Host "      $($_.App): $($_.Error)" -ForegroundColor DarkGray
+    # }
 }
 #EndRegion
 
@@ -321,12 +368,12 @@ if (Test-Path ".\ExecuteSaraCmd.ps1") {
     Write-Host "  Removing existing Office installation..." -ForegroundColor Gray
     try {
         & .\ExecuteSaraCmd.ps1
-        Write-Host "  ✓ Office removal complete" -ForegroundColor Gray
+        Write-Host "  [OK] Office removal complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ Office removal script failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] Office removal script failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ ExecuteSaraCmd.ps1 not found, skipping Office removal" -ForegroundColor Yellow
+    Write-Host "  [WARN] ExecuteSaraCmd.ps1 not found, skipping Office removal" -ForegroundColor Yellow
 }
 
 # Office installation
@@ -334,12 +381,12 @@ if (Test-Path ".\Install-Office365Suite.ps1") {
     Write-Host "  Installing Microsoft Office Suite..." -ForegroundColor Gray
     try {
         & .\Install-Office365Suite.ps1
-        Write-Host "  ✓ Office installation complete" -ForegroundColor Gray
+        Write-Host "  [OK] Office installation complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ Office installation failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] Office installation failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ Install-Office365Suite.ps1 not found, skipping Office install" -ForegroundColor Yellow
+    Write-Host "  [WARN] Install-Office365Suite.ps1 not found, skipping Office install" -ForegroundColor Yellow
 }
 
 # VSA installation
@@ -348,12 +395,12 @@ if (Test-Path $vsaPath) {
     Write-Host "  Installing VSA..." -ForegroundColor Gray
     try {
         Start-Process msiexec.exe -Wait -ArgumentList "/I `"$vsaPath`" /quiet /norestart" -NoNewWindow
-        Write-Host "  ✓ VSA installation complete" -ForegroundColor Gray
+        Write-Host "  [OK] VSA installation complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ VSA installation failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] VSA installation failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ VSA installer not found, skipping" -ForegroundColor Yellow
+    Write-Host "  [WARN] VSA installer not found, skipping" -ForegroundColor Yellow
 }
 
 # Practice Evolve installation
@@ -362,12 +409,12 @@ if (Test-Path $pePath) {
     Write-Host "  Installing Practice Evolve..." -ForegroundColor Gray
     try {
         & $pePath
-        Write-Host "  ✓ Practice Evolve installation complete" -ForegroundColor Gray
+        Write-Host "  [OK] Practice Evolve installation complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ Practice Evolve installation failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] Practice Evolve installation failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ Practice Evolve installer not found, skipping" -ForegroundColor Yellow
+    Write-Host "  [WARN] Practice Evolve installer not found, skipping" -ForegroundColor Yellow
 }
 
 # Wildix installation
@@ -386,12 +433,12 @@ if (Test-Path $wildixPath) {
         $Shortcut.TargetPath = "C:\Program Files\Wildix Collaboration\Wildix Collaboration.exe"
         $Shortcut.Save()
         
-        Write-Host "  ✓ Wildix installation complete" -ForegroundColor Gray
+        Write-Host "  [OK] Wildix installation complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ Wildix installation failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] Wildix installation failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ Wildix installer not found, skipping" -ForegroundColor Yellow
+    Write-Host "  [WARN] Wildix installer not found, skipping" -ForegroundColor Yellow
 }
 
 # Teams installation
@@ -400,12 +447,12 @@ if (Test-Path $teamsPath) {
     Write-Host "  Installing Microsoft Teams..." -ForegroundColor Gray
     try {
         Start-Process -FilePath $teamsPath -ArgumentList "-p" -Wait -NoNewWindow
-        Write-Host "  ✓ Teams installation complete" -ForegroundColor Gray
+        Write-Host "  [OK] Teams installation complete" -ForegroundColor Gray
     } catch {
-        Write-Host "  ⚠ Teams installation failed" -ForegroundColor Yellow
+        Write-Host "  [WARN] Teams installation failed" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  ⚠ Teams installer not found, skipping" -ForegroundColor Yellow
+    Write-Host "  [WARN] Teams installer not found, skipping" -ForegroundColor Yellow
 }
 
 Write-Host "  Additional software installation complete!" -ForegroundColor Green
@@ -442,15 +489,15 @@ try {
                            -Model_id $modelSelection.id -rtd_location_id "1" -Status "2" `
                            -ErrorAction Stop
             
-            Write-Host "  ✓ Asset registered successfully" -ForegroundColor Green
+            Write-Host "  [OK] Asset registered successfully" -ForegroundColor Green
         } else {
-            Write-Host "  ⚠ Model not found in Snipe-IT, asset not created" -ForegroundColor Yellow
+            Write-Host "  [WARN] Model not found in Snipe-IT, asset not created" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "  ℹ Asset already exists in Snipe-IT" -ForegroundColor Cyan
+        Write-Host "  [INFO] Asset already exists in Snipe-IT" -ForegroundColor Cyan
     }
 } catch {
-    Write-Host "  ⚠ Asset registration failed: $_" -ForegroundColor Yellow
+    Write-Host "  [WARN] Asset registration failed: $_" -ForegroundColor Yellow
 }
 #EndRegion
 
@@ -463,9 +510,9 @@ Write-Host "  Waiting for background tasks..." -ForegroundColor Gray
 if ($restoreJob) {
     Wait-Job $restoreJob -Timeout 60 | Out-Null
     if ($restoreJob.State -eq 'Completed') {
-        Write-Host "  ✓ Restore point created" -ForegroundColor Gray
+        Write-Host "  [OK] Restore point created" -ForegroundColor Gray
     } else {
-        Write-Host "  ⚠ Restore point creation timed out" -ForegroundColor Yellow
+        Write-Host "  [WARN] Restore point creation timed out" -ForegroundColor Yellow
     }
     Remove-Job $restoreJob -Force
 }
@@ -473,9 +520,9 @@ if ($restoreJob) {
 if ($dotnetJob) {
     Wait-Job $dotnetJob -Timeout 120 | Out-Null
     if ($dotnetJob.State -eq 'Completed') {
-        Write-Host "  ✓ .NET Framework enabled" -ForegroundColor Gray
+        Write-Host "  [OK] .NET Framework enabled" -ForegroundColor Gray
     } else {
-        Write-Host "  ⚠ .NET Framework enable timed out" -ForegroundColor Yellow
+        Write-Host "  [WARN] .NET Framework enable timed out" -ForegroundColor Yellow
     }
     Remove-Job $dotnetJob -Force
 }
