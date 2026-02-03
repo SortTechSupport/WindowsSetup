@@ -1,6 +1,6 @@
 #Requires -RunAsAdministrator
 <#.SYNOPSIS
-Optimized Windows setup automation script.
+Optimised Windows setup automation script.
 
 .DESCRIPTION
 Improved version with parallel operations, better error handling, and faster execution.
@@ -12,7 +12,7 @@ Version: 2.0
 
 Key Improvements:
 - Parallel Chocolatey installations
-- Optimized app removal with parallel processing
+- Optimised app removal with parallel processing
 - Better error handling and logging
 - Progress indicators
 - Reduced redundant operations
@@ -52,7 +52,7 @@ $xml = New-Object System.Xml.XmlDocument
 $xml.Load($xmlFilePath)
 #EndRegion
 
-#Region - System Configuration (Optimized)
+#Region - System Configuration (Optimised)
 Write-Host -ForegroundColor Green "`n[1/6] Configuring system settings..."
 
 # Batch registry operations for better performance
@@ -158,7 +158,7 @@ $dotnetJob = Start-Job -ScriptBlock {
     Enable-WindowsOptionalFeature -Online -FeatureName NetFx3 -All -NoRestart -WarningAction SilentlyContinue
 }
 
-# NBT-NS disable (optimized)
+# NBT-NS disable
 try {
     $regkey = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces"
     Get-ChildItem $regkey -ErrorAction SilentlyContinue | ForEach-Object {
@@ -186,7 +186,7 @@ try {
 Write-Host "  System configuration complete!" -ForegroundColor Green
 #EndRegion
 
-#Region - Chocolatey Software Installation (Parallelized)
+#Region - Chocolatey Software Installation (Parallelised)
 Write-Host -ForegroundColor Green "`n[2/6] Installing software via Chocolatey..."
 
 # Check if Chocolatey is already installed
@@ -206,7 +206,7 @@ if (-not $chocoInstalled) {
     }
 }
 
-# Install packages (we can't truly parallelize choco, but we can batch them efficiently)
+# Install packages (we can't truly parallelise choco, but we can batch them efficiently)
 $chocoPackages = @(
     'chocolatey-core.extension',
     'googlechrome',
@@ -249,7 +249,7 @@ try {
 Write-Host "  Software installation complete!" -ForegroundColor Green
 #EndRegion
 
-#Region - Software Removal (Optimized with Robust Error Handling)
+#Region - Software Removal (Optimised with Robust Error Handling)
 Write-Host -ForegroundColor Green "`n[3/6] Removing unnecessary applications..."
 
 # Get apps from XML
@@ -501,8 +501,8 @@ try {
 }
 #EndRegion
 
-#Region - Cleanup and Finalization
-Write-Host -ForegroundColor Green "`n[6/6] Finalizing setup..."
+#Region - Cleanup and Finalisation
+Write-Host -ForegroundColor Green "`n[6/6] Finalising setup..."
 
 # Wait for background jobs to complete
 Write-Host "  Waiting for background tasks..." -ForegroundColor Gray
@@ -527,7 +527,7 @@ if ($dotnetJob) {
     Remove-Job $dotnetJob -Force
 }
 
-Write-Host "  Finalization complete!" -ForegroundColor Green
+Write-Host "Finalisation complete!" -ForegroundColor Green
 #EndRegion
 
 # Close debugging log
