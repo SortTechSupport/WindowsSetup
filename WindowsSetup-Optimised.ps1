@@ -6,7 +6,7 @@ Optimized Windows setup automation script.
 Improved version with parallel operations, better error handling, and faster execution.
 
 .NOTES
-Author: Conrad Kent (Optimized by Claude)
+Author: Conrad Kent
 Date: 2026-02-03
 Version: 2.0
 
