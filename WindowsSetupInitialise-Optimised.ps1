@@ -1,4 +1,3 @@
-#Requires -RunAsAdministrator
 <#.SYNOPSIS
 initialisation script for Windows Setup automation.
 
