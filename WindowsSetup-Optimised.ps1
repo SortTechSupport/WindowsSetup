@@ -225,7 +225,7 @@ foreach ($package in $chocoPackages) {
         $chocoArgs += '--ignore-checksums'
     }
     
-    $result = & choco @chocoArgs 2>&1
+    Set-Variable -Name "result" -Value (& choco @chocoArgs 2>&1)
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host " [OK]" -ForegroundColor Green
