@@ -188,8 +188,14 @@ Write-Host "  System configuration complete!" -ForegroundColor Green
 
 #Region - Chocolatey Software Installation (Parallelised)
 Write-Host -ForegroundColor Green "`n[2/6] Installing software via Chocolatey..."
-
-# Check if Chocolatey is already installed
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+	choco install chocolatey-core.extension -y
+        choco install googlechrome -y --ignore-checksums
+        choco install adobereader -y
+        choco install 7zip -y
+        choco install citrix-workspace -y
+        
+<# Check if Chocolatey is already installed
 $chocoInstalled = $null -ne (Get-Command choco -ErrorAction SilentlyContinue)
 
 if (-not $chocoInstalled) {
@@ -213,7 +219,7 @@ $chocoPackages = @(
     'adobereader',
     '7zip',
     'citrix-workspace'
-)
+)#>
 
 Write-Host "  Installing packages: $($chocoPackages -join ', ')" -ForegroundColor Gray
 
