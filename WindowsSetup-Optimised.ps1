@@ -431,8 +431,9 @@ if (Test-Path $wildixPath) {
         $SLURL = $xml.SelectSingleNode('//Wildix/SortLegalURL').InnerText
         $SLtdURL = $xml.SelectSingleNode('//Wildix/SortLimitedURL').InnerText
         
-        Start-Process msiexec.exe -Wait -ArgumentList "/i `"$wildixPath`" /qn host=$SLURL secondaryHost=$SLtdURL callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1" -NoNewWindow
-        
+       # Start-Process msiexec.exe -Wait -ArgumentList "/i `"$wildixPath`" /qn host=$SLURL secondaryHost=$SLtdURL callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1" -NoNewWindow
+        .\Collaboration-x64.msi /qn host=$SLURL secondaryHost=$SLtdURL callControlMode=0 callBringToFrontMode=0 allowInsecureConnections=1 launchAtStartup=1
+
         # Create startup shortcut
         $WshShell = New-Object -ComObject WScript.Shell
         $Shortcut = $WshShell.CreateShortcut("C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\Wildix.lnk")
