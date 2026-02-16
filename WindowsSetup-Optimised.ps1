@@ -219,7 +219,7 @@ $chocoPackages = @(
     'adobereader',
     '7zip',
     'citrix-workspace'
-)#>
+)
 
 Write-Host "  Installing packages: $($chocoPackages -join ', ')" -ForegroundColor Gray
 
@@ -238,7 +238,7 @@ foreach ($package in $chocoPackages) {
     } else {
         Write-Host " [WARN]" -ForegroundColor Yellow
     }
-}
+}#>
 
 # Create Citrix shortcut
 try {
