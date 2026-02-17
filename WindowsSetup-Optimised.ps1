@@ -484,7 +484,8 @@ try {
     $assetExists = Get-SnipeitAsset -search $serialNumber -ErrorAction SilentlyContinue
     
     if ([string]::IsNullOrEmpty($assetExists)) {
-        # Get model information
+        # Get model information 
+		# !!If the model doesn't exist in Snipe you will need to manually run Get-WmiObject -Class Win32_ComputerSystem).Model and then add it to Snipe!!
         $modelNo = (Get-WmiObject -Class Win32_ComputerSystem).Model
         $modelSelection = Get-SnipeitModel -ErrorAction SilentlyContinue | 
                          Where-Object { $_.model_number -like "*$modelNo*" } | 
