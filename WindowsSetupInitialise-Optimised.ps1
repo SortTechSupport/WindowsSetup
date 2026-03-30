@@ -25,12 +25,25 @@ $ErrorActionPreference = 'Stop'
 
 Write-Host -ForegroundColor Cyan "=== Windows Setup Initialization ==="
 
+# Load configuration
+$configPath = "$PSScriptRoot\Config.psd1"
+if (-not (Test-Path $configPath)) {
+    Write-Host -ForegroundColor Red "ERROR: Config.psd1 not found at $configPath"
+    Exit 1
+}
+$Config = Import-PowerShellDataFile -Path $configPath
+
 # Specify the root and log paths
-$rootPath = "C:\Windows-Setup\"
+$rootPath = $Config.RootPath
 Write-Host -ForegroundColor Green "Creating directory structure..."
 New-Item -ItemType Directory -Path $rootPath -Force | Out-Null
 New-Item -ItemType Directory -Path "$rootPath\Logs" -Force | Out-Null
 Set-Location -Path $rootPath
+
+# Start logging — Initialise has its own transcript separate from the main script
+$initLogPath = "$rootPath\Logs\InitialiseLog_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+Start-Transcript -Path $initLogPath -Append
+Write-Host "  Log: $initLogPath" -ForegroundColor Gray
 
 #Region - Module Installation
 Write-Host -ForegroundColor Green "Installing required PowerShell modules..."
@@ -58,42 +71,23 @@ foreach ($module in $modules) {
 # Wait for module installation to complete
 Write-Host "  Installing modules in parallel..." -NoNewline
 $moduleJobs | Wait-Job | Out-Null
-$moduleJobs | Receive-Job
-$moduleJobs | Remove-Job
 Write-Host " Done!" -ForegroundColor Green
+foreach ($job in $moduleJobs) {
+    if ($job.State -eq 'Failed') {
+        $jobErrors = $job.ChildJobs[0].Error | Out-String
+        Write-Host "  [WARN] Module install failed: $jobErrors" -ForegroundColor Yellow
+    } else {
+        Receive-Job -Job $job 2>&1 | Out-Null
+    }
+}
+$moduleJobs | Remove-Job
 #EndRegion
 
 #Region - File Downloads
 Write-Host -ForegroundColor Green "Downloading required files..."
 
 # Define all downloads
-$downloads = @(
-    @{
-        Url = 'https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/WindowsSetup-Optimized.ps1'
-        Destination = "$rootPath\WindowsSetup.ps1"
-        UseWebRequest = $true
-    },
-    @{
-        Url = 'https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/OfficeSetup/ExecuteSaraCmd.ps1'
-        Destination = "$rootPath\ExecuteSaraCmd.ps1"
-        UseWebRequest = $true
-    },
-    @{
-        Url = 'https://raw.githubusercontent.com/SortTechSupport/WindowsSetup/main/OfficeSetup/Install-Office365Suite.ps1'
-        Destination = "$rootPath\Install-Office365Suite.ps1"
-        UseWebRequest = $true
-    },
-    @{
-        Url = 'https://go.microsoft.com/fwlink/?linkid=2243204&clcid=0x409'
-        Destination = "$rootPath\TeamsBootStrapper.exe"
-        UseWebRequest = $false  # Use BITS for larger files
-    },
-    @{
-        Url = 'https://files.wildix.com/integrations/win/collaboration/Collaboration-x64.msi'
-        Destination = "$rootPath\Collaboration-x64.msi"
-        UseWebRequest = $false  # Use BITS for larger files
-    }
-)
+$downloads = $Config.Downloads
 
 # Download files in parallel using jobs
 $downloadJobs = @()
@@ -140,16 +134,7 @@ Write-Host "  All downloads complete!" -ForegroundColor Green
 #Region - Network File Copies
 Write-Host -ForegroundColor Green "Copying configuration files from network share..."
 
-$networkFiles = @(
-    @{
-        Source = "\\vfp02\software$\_Local installers\WindowsSetup\WindowsSetup.xml"
-        Destination = "$rootPath\WindowsSetup.xml"
-    },
-    @{
-        Source = "\\vfp02\software$\_Local installers\WindowsSetup\UserBasedLicencingConfiguration.xml"
-        Destination = "$rootPath\UserBasedLicencingConfiguration.xml"
-    }
-)
+$networkFiles = $Config.NetworkFiles
 
 # Copy network files (these can't be parallelized easily, but we can use Robocopy for speed)
 foreach ($file in $networkFiles) {
@@ -165,6 +150,9 @@ foreach ($file in $networkFiles) {
 
 Write-Host -ForegroundColor Cyan "`n=== Initialization Complete ==="
 Write-Host -ForegroundColor Green "Launching WindowsSetup.ps1...`n"
+
+# Stop Initialise transcript before the main script starts its own
+Stop-Transcript
 
 # Run the Windows-Setup Script
 & "$rootPath\WindowsSetup.ps1"

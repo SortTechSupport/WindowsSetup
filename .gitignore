@@ -1,0 +1,5 @@
+# Config file contains sensitive paths and credentials — never commit
+Config.psd1
+
+# Log files generated on target machines during setup runs
+Logs/

@@ -40,6 +40,15 @@ Write-Host -ForegroundColor Cyan "=== Windows Setup Started at $(Get-Date -Forma
 # Import required module
 Import-Module SnipeitPS -ErrorAction SilentlyContinue
 
+# Load configuration
+$configPath = "$PSScriptRoot\Config.psd1"
+if (-not (Test-Path $configPath)) {
+    Write-Host -ForegroundColor Red "ERROR: Config.psd1 not found at $configPath"
+    Stop-Transcript
+    Exit 1
+}
+$Config = Import-PowerShellDataFile -Path $configPath
+
 # Load XML content from file
 $xmlFilePath = "$PSScriptRoot\WindowsSetup.xml"
 if (-not (Test-Path $xmlFilePath)) {
@@ -59,14 +68,14 @@ Write-Host -ForegroundColor Green "`n[1/6] Configuring system settings..."
 $regOperations = @(
     # System Restore frequency
     @{
-        Path = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+        Path = $Config.RegPaths.SystemRestore
         Name = "SystemRestorePointCreationFrequency"
         Value = 0
         Type = "DWORD"
     },
     # LLMNR disable
     @{
-        Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient"
+        Path = $Config.RegPaths.LlmnrDnsClient
         Name = "EnableMultiCast"
         Value = 0
         Type = "DWORD"
@@ -160,7 +169,7 @@ $dotnetJob = Start-Job -ScriptBlock {
 
 # NBT-NS disable
 try {
-    $regkey = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces"
+    $regkey = $Config.RegPaths.NbtNsInterfaces
     Get-ChildItem $regkey -ErrorAction SilentlyContinue | ForEach-Object {
         Set-ItemProperty -Path "$regkey\$($_.PSChildName)" -Name NetbiosOptions -Value 2 -ErrorAction SilentlyContinue
     } | Out-Null
@@ -186,16 +195,10 @@ try {
 Write-Host "  System configuration complete!" -ForegroundColor Green
 #EndRegion
 
-#Region - Chocolatey Software Installation (Parallelised)
+#Region - Chocolatey Software Installation
 Write-Host -ForegroundColor Green "`n[2/6] Installing software via Chocolatey..."
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-	choco install chocolatey-core.extension -y
-        choco install googlechrome -y --ignore-checksums
-        choco install adobereader -y
-        choco install 7zip -y
-        choco install citrix-workspace -y
-        
-<# Check if Chocolatey is already installed
+
+# Check if Chocolatey is already installed
 $chocoInstalled = $null -ne (Get-Command choco -ErrorAction SilentlyContinue)
 
 if (-not $chocoInstalled) {
@@ -204,12 +207,15 @@ if (-not $chocoInstalled) {
         Set-ExecutionPolicy Bypass -Scope Process -Force
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
         Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        
-        # Refresh environment to access choco
+
+        # Refresh environment to access choco in this session
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        Write-Host "  [OK] Chocolatey installed" -ForegroundColor Gray
     } catch {
         Write-Host "  ERROR: Chocolatey installation failed: $_" -ForegroundColor Red
     }
+} else {
+    Write-Host "  [OK] Chocolatey already installed" -ForegroundColor Gray
 }
 
 # Install packages (we can't truly parallelise choco, but we can batch them efficiently)
@@ -225,27 +231,30 @@ Write-Host "  Installing packages: $($chocoPackages -join ', ')" -ForegroundColo
 
 foreach ($package in $chocoPackages) {
     Write-Host "    Installing $package..." -NoNewline -ForegroundColor DarkGray
-    
+
     $chocoArgs = @('install', $package, '-y', '--no-progress', '--limit-output')
     if ($package -eq 'googlechrome') {
         $chocoArgs += '--ignore-checksums'
     }
-    
-    Set-Variable -Name "result" -Value (& choco @chocoArgs 2>&1)
-    
+
+    $chocoOutput = & choco @chocoArgs 2>&1
+
     if ($LASTEXITCODE -eq 0) {
         Write-Host " [OK]" -ForegroundColor Green
     } else {
         Write-Host " [WARN]" -ForegroundColor Yellow
+        Write-Host "    --- choco output for $package ---" -ForegroundColor DarkGray
+        $chocoOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        Write-Host "    ---" -ForegroundColor DarkGray
     }
-}#>
+}
 
 # Create Citrix shortcut
 try {
     $WshShell = New-Object -ComObject WScript.Shell
-    $Shortcut = $WshShell.CreateShortcut("C:\Users\Public\Desktop\Citrix.lnk")
-    $Shortcut.TargetPath = "https://sortgroup.cloud.com/"
-    $Shortcut.IconLocation = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+    $Shortcut = $WshShell.CreateShortcut($Config.Citrix.ShortcutPath)
+    $Shortcut.TargetPath = $Config.Citrix.TargetUrl
+    $Shortcut.IconLocation = $Config.Citrix.IconPath
     $Shortcut.Save()
     Write-Host "  [OK] Citrix shortcut created" -ForegroundColor Gray
 } catch {
@@ -342,7 +351,8 @@ if ($allApps.Count -eq 0) {
             }
         } elseif ($job.State -eq 'Failed') {
             # Job failed completely - log it
-            Write-Host "  [WARN] Job failed for app removal" -ForegroundColor Yellow
+            $jobErrors = $job.ChildJobs[0].Error | Out-String
+            Write-Host "  [WARN] Job failed for app removal: $jobErrors" -ForegroundColor Yellow
         }
     }
     
@@ -396,7 +406,7 @@ if (Test-Path ".\Install-Office365Suite.ps1") {
 }
 
 # VSA installation
-$vsaPath = "\\vfp02\software$\_Local installers\VSASetup.msi"
+$vsaPath = $Config.Installers.VsaMsiPath
 if (Test-Path $vsaPath) {
     Write-Host "  Installing VSA..." -ForegroundColor Gray
     try {
@@ -410,7 +420,7 @@ if (Test-Path $vsaPath) {
 }
 
 # Practice Evolve installation
-$pePath = "\\pesvr01\PracticeEvolveInstall\PEInstall.ps1"
+$pePath = $Config.Installers.PracticeEvolvePath
 if (Test-Path $pePath) {
     Write-Host "  Installing Practice Evolve..." -ForegroundColor Gray
     try {
@@ -424,7 +434,7 @@ if (Test-Path $pePath) {
 }
 
 # Wildix installation
-$wildixPath = ".\Collaboration-x64.msi"
+$wildixPath = $Config.Installers.WildixMsiPath
 if (Test-Path $wildixPath) {
     Write-Host "  Installing Wildix..." -ForegroundColor Gray
     try {
@@ -436,10 +446,10 @@ if (Test-Path $wildixPath) {
 
         # Create startup shortcut
         $WshShell = New-Object -ComObject WScript.Shell
-        $Shortcut = $WshShell.CreateShortcut("C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\Wildix.lnk")
-        $Shortcut.TargetPath = "C:\Program Files\Wildix Collaboration\Wildix Collaboration.exe"
+        $Shortcut = $WshShell.CreateShortcut($Config.Wildix.StartupShortcutPath)
+        $Shortcut.TargetPath = $Config.Wildix.ExePath
         $Shortcut.Save()
-        
+
         Write-Host "  [OK] Wildix installation complete" -ForegroundColor Gray
     } catch {
         Write-Host "  [WARN] Wildix installation failed" -ForegroundColor Yellow
@@ -520,7 +530,8 @@ if ($restoreJob) {
     if ($restoreJob.State -eq 'Completed') {
         Write-Host "  [OK] Restore point created" -ForegroundColor Gray
     } else {
-        Write-Host "  [WARN] Restore point creation timed out" -ForegroundColor Yellow
+        $jobErrors = $restoreJob.ChildJobs[0].Error | Out-String
+        Write-Host "  [WARN] Restore point timed out or failed: $jobErrors" -ForegroundColor Yellow
     }
     Remove-Job $restoreJob -Force
 }
@@ -530,7 +541,8 @@ if ($dotnetJob) {
     if ($dotnetJob.State -eq 'Completed') {
         Write-Host "  [OK] .NET Framework enabled" -ForegroundColor Gray
     } else {
-        Write-Host "  [WARN] .NET Framework enable timed out" -ForegroundColor Yellow
+        $jobErrors = $dotnetJob.ChildJobs[0].Error | Out-String
+        Write-Host "  [WARN] .NET Framework enable timed out or failed: $jobErrors" -ForegroundColor Yellow
     }
     Remove-Job $dotnetJob -Force
 }
