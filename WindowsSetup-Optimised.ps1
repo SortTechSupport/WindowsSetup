@@ -414,7 +414,7 @@ $pePath = "\\pesvr01\PracticeEvolveInstall\PEInstall.ps1"
 if (Test-Path $pePath) {
     Write-Host "  Installing Practice Evolve..." -ForegroundColor Gray
     try {
-        & $pePath
+        & $pePath -Choice 3
         Write-Host "  [OK] Practice Evolve installation complete" -ForegroundColor Gray
     } catch {
         Write-Host "  [WARN] Practice Evolve installation failed" -ForegroundColor Yellow
