@@ -1,0 +1,5 @@
+<Configuration>
+  <Remove All="TRUE" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Display Level="None" AcceptEULA="TRUE" />
+</Configuration>
