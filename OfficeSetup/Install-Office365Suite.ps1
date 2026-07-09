@@ -53,6 +53,11 @@ Try{
   Write-Warning $_
 }
 
+# Run the Office uninstall if there is an existing installation
+Write-Verbose "Removing existing Office installations"
+$Uninstall = Start-Process "$OfficeInstallDownloadPath\Setup.exe" -ArgumentList "/configure `"$PSScriptRoot\UninstallOffice.xml`"" -Wait -PassThru
+if ($Uninstall.ExitCode -ne 0) { Write-Warning "Office removal exited with code $($Uninstall.ExitCode)" }
+
 # Run the O365 install
 Try{
   Write-Verbose "Downloading and installing Office 365"
