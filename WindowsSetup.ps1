@@ -20,7 +20,7 @@ Date: 28/10/2022
 Version: 1.0#>
 
 #Region - Initial Params
-#Requires -modules SnipeitPS, PSWindowsUpdates
+#Requires -modules SnipeitPS
 # Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
