@@ -21,7 +21,7 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/SortTechSupport/Windows
 Copy-Item "\\vfp02\software$\_Local installers\WindowsSetup\WindowsSetup.xml" -Destination $rootPath
 Copy-Item "\\vfp02\software$\_Local installers\WindowsSetup\UserBasedLicencingConfiguration.xml" -Destination $rootPath
 Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2243204&clcid=0x409" -OutFile ".\TeamsBootStrapper.exe"
-Invoke-WebRequest -Url https://files.wildix.com/integrations/win/collaboration/Collaboration-x64.msi -OutFile ".\Collaboration-x64.msi"
+Invoke-WebRequest -Uri https://files.wildix.com/integrations/win/collaboration/Collaboration-x64.msi -OutFile ".\Collaboration-x64.msi"
 
 # Run the Windows-Setup Script
 & .\WindowsSetup.ps1
