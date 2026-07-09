@@ -20,7 +20,7 @@ Date: 28/10/2022
 Version: 1.0#>
 
 #Region - Initial Params
-#Requires -modules SnipeitPS
+#Requires -modules SnipeitPS, PSWindowsUpdates
 # Check if the shell is running as Administrator. If not, call itself with "Run as Admin"
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Start-Process PowerShell.exe -ArgumentList "-NoProfile -File `"$PSCommandPath`"" -Verb RunAs
@@ -113,7 +113,7 @@ $Parameters = @{
 Set-SmbServerConfiguration @Parameters
 #EndRegion
 
-#Region - Software Installation
+#Region - Chocolatey Software Installation
 # Install Chocolatey and other basic programs
 Write-Host -ForegroundColor Green "Install Chocolatey to automate basic program installation"
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -122,6 +122,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
         choco install adobereader -y
         choco install 7zip -y
         choco install citrix-workspace -y
+        #choco install powertoys -y
 
 # Create Citrix shortcut on Public Desktop
 $WshShell = New-Object -comObject WScript.Shell
@@ -149,10 +150,7 @@ foreach ($Bloat in $allApps) {
 #EndRegion
 
 #Region - Call next scripts
-Write-Host -ForegroundColor Green "Removing existing office install"
-& .\ExecuteSaraCmd.ps1 
-
-Write-Host -ForegroundColor Green "Installing SortGroup Microsoft Office Suite"
+Write-Host -ForegroundColor Green "Removing existing office install and installing SortGroup Microsoft Office Suite"
 & .\Install-Office365Suite.ps1
 
 Write-Host -ForegroundColor Green "Installing VSA"
