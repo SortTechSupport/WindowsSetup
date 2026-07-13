@@ -157,7 +157,7 @@ Write-Host -ForegroundColor Green "Installing VSA"
 Start-Process msiexec.exe -Wait -ArgumentList '/I "\\vfp02\software$\_Local installers\VSASetup.msi" /quiet'
 
 Write-Host -ForegroundColor Green "Installing Practice Evolve"
-& \\pesvr01\PracticeEvolveInstall\PEInstall.ps1
+& \\pesvr01\PracticeEvolveInstall\PEInstall.ps1 -Choice 3
 
 Write-Host -ForegroundColor Green "Installing Wildix"
 $SLURL = $xml.SelectSingleNode('//Wildix/SortLegalURL').InnerText
