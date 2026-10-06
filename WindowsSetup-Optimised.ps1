@@ -396,17 +396,25 @@ if (Test-Path ".\Install-Office365Suite.ps1") {
 }
 
 # VSA installation
-$vsaPath = "\\vfp02\software$\_Local installers\VSASetup.msi"
-if (Test-Path $vsaPath) {
+$vsaUrl  = "https://vsa120.kaseya.net/mkDefault.asp?id=91924191"
+$vsaPath = "$env:TEMP\KcsSetup.exe"
+try {
+    Write-Host "  Downloading VSA agent..." -ForegroundColor Gray
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $vsaUrl -OutFile $vsaPath -UseBasicParsing -ErrorAction Stop
+    $ProgressPreference = 'Continue'
+
     Write-Host "  Installing VSA..." -ForegroundColor Gray
-    try {
-        Start-Process msiexec.exe -Wait -ArgumentList "/I `"$vsaPath`" /quiet /norestart" -NoNewWindow
+    $proc = Start-Process -FilePath $vsaPath -ArgumentList "/e /s" -Wait -PassThru -NoNewWindow
+    if ($proc.ExitCode -eq 0) {
         Write-Host "  [OK] VSA installation complete" -ForegroundColor Gray
-    } catch {
-        Write-Host "  [WARN] VSA installation failed" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [WARN] VSA installer exited with code $($proc.ExitCode)" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "  [WARN] VSA installer not found, skipping" -ForegroundColor Yellow
+} catch {
+    Write-Host "  [WARN] VSA download/install failed: $($_.Exception.Message)" -ForegroundColor Yellow
+} finally {
+    Remove-Item $vsaPath -Force -ErrorAction SilentlyContinue
 }
 
 # Practice Evolve installation
